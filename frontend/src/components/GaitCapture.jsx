@@ -5,10 +5,13 @@ import * as poseDetection from "@tensorflow-models/pose-detection";
 /**
  * GaitCapture
  * ------------
- * Captures live webcam video, runs MoveNet pose detection in-browser,
- * draws the detected skeleton on a canvas overlay, records a short walking
- * clip as a sequence of keypoint frames, and submits it to the Spring Boot
- * backend for gait analysis.
+ * Captures live camera video (front or back camera), runs MoveNet pose
+ * detection in-browser, draws the detected skeleton on a canvas overlay,
+ * records a short walking clip as a sequence of keypoint frames, and submits
+ * it to the Spring Boot backend for gait analysis.
+ *
+ * Camera switching: the pose model loads once; the camera stream restarts
+ * whenever `facingMode` changes ("user" = front, "environment" = back).
  */
 
 const KEYPOINT_NAMES = [
@@ -26,7 +29,16 @@ const SKELETON_EDGES = [
 
 const MIN_CONFIDENCE = 0.3;
 
-export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
+const CAMERA_LABELS = {
+  user: "front camera",
+  environment: "back camera",
+};
+
+export default function GaitCapture({
+  onSessionComplete,
+  recordSeconds = 8,
+  defaultFacingMode = "environment", // back camera is easier for filming a walk
+}) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const detectorRef = useRef(null);
@@ -37,10 +49,16 @@ export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(recordSeconds);
 
+  const [modelReady, setModelReady] = useState(false);
+  const [facingMode, setFacingMode] = useState(defaultFacingMode); // "user" | "environment"
+  const [cameraCount, setCameraCount] = useState(0);
+  const [cameraRetry, setCameraRetry] = useState(0);
+
+  // 1) Load the pose model once.
   useEffect(() => {
     let cancelled = false;
 
-    async function setup() {
+    async function loadModel() {
       try {
         setStatus("loading");
         await tf.ready();
@@ -48,42 +66,91 @@ export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
           poseDetection.SupportedModels.MoveNet,
           { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
         );
-        if (cancelled) return;
+        if (cancelled) {
+          detector.dispose?.();
+          return;
+        }
         detectorRef.current = detector;
+        setModelReady(true);
+      } catch (err) {
+        console.error("Model load failed:", err);
+        if (!cancelled) {
+          setErrorMsg("Could not load the pose model. Check your connection and reload.");
+          setStatus("error");
+        }
+      }
+    }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+    loadModel();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafRef.current);
+      detectorRef.current?.dispose?.();
+    };
+  }, []);
+
+  // 2) (Re)start the camera whenever the model is ready or the camera choice changes.
+  useEffect(() => {
+    if (!modelReady) return;
+    let cancelled = false;
+    let stream = null;
+
+    async function startCamera() {
+      try {
+        setErrorMsg("");
+        setStatus("loading");
+
+        // "ideal" (not "exact") so devices with only one camera, like most
+        // laptops, still work instead of throwing OverconstrainedError.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
           audio: false,
         });
-        if (cancelled) return;
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
 
         const video = videoRef.current;
         video.srcObject = stream;
         await video.play();
-        setStatus("ready");
+
+        // Count cameras so we only offer "Switch camera" when there is a choice.
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (!cancelled) {
+          setCameraCount(devices.filter((d) => d.kind === "videoinput").length);
+          setStatus("ready");
+        }
       } catch (err) {
-        console.error("Setup failed:", err);
+        console.error("Camera start failed:", err);
         if (!cancelled) {
           setErrorMsg(
             err.name === "NotAllowedError"
-              ? "Camera access was denied. Please allow camera access and reload."
-              : "Could not start camera or load the pose model."
+              ? "Camera access was denied. Allow camera access in your browser settings, then try again."
+              : err.name === "NotFoundError"
+              ? "No camera was found on this device."
+              : `Could not start the ${CAMERA_LABELS[facingMode]}.`
           );
           setStatus("error");
         }
       }
     }
 
-    setup();
+    startCamera();
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafRef.current);
-      const stream = videoRef.current?.srcObject;
-      stream?.getTracks().forEach((track) => track.stop());
-      detectorRef.current?.dispose?.();
+      // Release the old camera before the next one starts (required on iOS Safari).
+      const current = stream || videoRef.current?.srcObject;
+      current?.getTracks?.().forEach((track) => track.stop());
     };
-  }, []);
+  }, [modelReady, facingMode, cameraRetry]);
+
+  function switchCamera() {
+    setFacingMode((mode) => (mode === "user" ? "environment" : "user"));
+  }
 
   function drawFrame(video, canvas, keypoints) {
     const ctx = canvas.getContext("2d");
@@ -178,6 +245,7 @@ export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
       if (!response.ok) throw new Error(`Server responded ${response.status}`);
       const metrics = await response.json();
       onSessionComplete?.(metrics);
+      setErrorMsg("");
       setStatus("ready");
     } catch (err) {
       console.error("Failed to submit session:", err);
@@ -186,13 +254,24 @@ export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
     }
   }
 
+  const canSwitchCamera = status === "ready" && cameraCount > 1;
+  // Front-camera preview is mirrored (like a selfie view). This is display
+  // only; the keypoints sent to the backend are never mirrored.
+  const mirrorPreview = facingMode === "user";
+
   return (
     <div style={{ maxWidth: 640, margin: "0 auto" }}>
       <div style={{ position: "relative" }}>
         <video ref={videoRef} style={{ display: "none" }} playsInline muted />
         <canvas
           ref={canvasRef}
-          style={{ width: "100%", borderRadius: 8, background: "#111", display: "block" }}
+          style={{
+            width: "100%",
+            borderRadius: 8,
+            background: "#111",
+            display: "block",
+            transform: mirrorPreview ? "scaleX(-1)" : "none",
+          }}
         />
         {status === "recording" && (
           <div
@@ -205,14 +284,45 @@ export default function GaitCapture({ onSessionComplete, recordSeconds = 8 }) {
             REC {secondsLeft}s
           </div>
         )}
+        {status === "loading" && modelReady && (
+          <div
+            style={{
+              position: "absolute", inset: 0, display: "flex",
+              alignItems: "center", justifyContent: "center",
+              color: "#fff", background: "rgba(0,0,0,0.5)", borderRadius: 8,
+            }}
+          >
+            Starting {CAMERA_LABELS[facingMode]}…
+          </div>
+        )}
       </div>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        {status === "loading" && <p>Loading camera and pose model…</p>}
-        {status === "error" && <p style={{ color: "#c00" }}>{errorMsg}</p>}
+      <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        {status === "loading" && !modelReady && <p>Loading pose model…</p>}
+        {status === "error" && (
+          <>
+            <p style={{ color: "#c00", margin: 0 }}>{errorMsg}</p>
+            {modelReady && (
+              <>
+                <button onClick={() => setCameraRetry((n) => n + 1)}>Try again</button>
+                {cameraCount > 1 && <button onClick={switchCamera}>Use other camera</button>}
+              </>
+            )}
+          </>
+        )}
 
         {status === "ready" && (
-          <button onClick={startRecording}>Start walking — record {recordSeconds}s</button>
+          <>
+            <button onClick={startRecording}>Start walking — record {recordSeconds}s</button>
+            {canSwitchCamera && (
+              <button onClick={switchCamera}>
+                Switch to {facingMode === "user" ? "back" : "front"} camera
+              </button>
+            )}
+            <span style={{ fontSize: 13, opacity: 0.7 }}>
+              Using {CAMERA_LABELS[facingMode]}
+            </span>
+          </>
         )}
 
         {status === "done" && (
