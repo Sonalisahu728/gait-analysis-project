@@ -1,313 +1,344 @@
-# 📚 Library Management System
+# 🦶 Gait Analysis Project
 
-A simple **Library Management System** built using **Java, Spring Boot, Spring Data JPA, Hibernate, PostgreSQL, and HTML**.
+A full-stack web application designed for **gait analysis**, providing a web-based interface for working with gait-related data and presenting analysis results in an accessible and interactive way.
 
-This project provides basic functionality for managing books in a library, including adding, viewing, updating, and deleting book records.
+The project follows a separate **frontend and backend architecture**, making the application easier to develop, maintain, test, and deploy.
 
----
+## 🌐 Live Demo
 
-## 🚀 Features
-
-* ➕ Add new books
-* 📖 View all available books
-* 🔍 Search/manage book records
-* ✏️ Update book details
-* 🗑️ Delete books
-* 🟢 Track book availability
-* 🗄️ Store book data in PostgreSQL
-* 🔗 REST API-based backend
-* 🌐 Web interface
-* ⚙️ Automatic database table creation/update using Hibernate
+🚀 **Live Application:**
+https://gait-analysis-project.vercel.app/
 
 ---
 
-## 🛠️ Technologies Used
+## 📌 About the Project
 
-| Technology        | Purpose                       |
-| ----------------- | ----------------------------- |
-| Java              | Programming Language          |
-| Spring Boot 3.2.0 | Backend Framework             |
-| Spring Data JPA   | Database Operations           |
-| Hibernate         | ORM                           |
-| PostgreSQL        | Database                      |
-| Maven             | Build & Dependency Management |
-| HTML              | Frontend                      |
-| Apache Tomcat     | Embedded Web Server           |
+**Gait analysis** is the study of human walking and movement patterns.
 
----
+This project provides a digital platform for gait-related analysis through a web interface. The application is divided into two main components:
 
-## 📂 Project Structure
+* **Frontend** – Provides the user interface and user interaction.
+* **Backend** – Handles server-side processing, APIs, and application logic.
+
+### High-Level Architecture
 
 ```text
-LibraryManagement
+                 ┌───────────────────┐
+                 │       User        │
+                 │     / Browser     │
+                 └─────────┬─────────┘
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │     Frontend      │
+                 │   User Interface  │
+                 └─────────┬─────────┘
+                           │
+                       API Request
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │      Backend      │
+                 │  Server / APIs    │
+                 └─────────┬─────────┘
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │  Gait Processing  │
+                 │   & Analysis      │
+                 └─────────┬─────────┘
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │ Analysis Results  │
+                 └───────────────────┘
+```
+
+---
+
+## ✨ Features
+
+* 🦶 Gait analysis functionality
+* 📊 Presentation of gait-related information
+* 🖥️ Web-based user interface
+* 🔗 Frontend–backend communication
+* 🧩 Separate frontend and backend structure
+* 🌐 Deployed web application
+* 📱 User-friendly web experience
+
+---
+
+## 🛠️ Project Structure
+
+```text
+gait-analysis-project/
 │
-├── src
-│   ├── main
-│   │   ├── java
-│   │   │   └── com.example.demo
-│   │   │       ├── controller
-│   │   │       │   └── BookController.java
-│   │   │       │
-│   │   │       ├── entity
-│   │   │       │   └── Book.java
-│   │   │       │
-│   │   │       ├── repository
-│   │   │       │   └── BookRepository.java
-│   │   │       │
-│   │   │       ├── service
-│   │   │       │   └── BookService.java
-│   │   │       │
-│   │   │       └── LibraryManagementApplication.java
-│   │   │
-│   │   └── resources
-│   │       ├── static
-│   │       │   └── index.html
-│   │       │
-│   │       └── application.properties
-│   │
-│   └── test
-│       └── java
+├── backend/
+│   ├── ...
+│   └── Backend application
 │
-├── pom.xml
-├── mvnw
-├── mvnw.cmd
-└── .gitignore
+├── frontend/
+│   ├── ...
+│   └── Frontend application
+│
+├── README.md
+└── ...
+```
+
+The repository currently contains dedicated `backend` and `frontend` directories.
+
+---
+
+## 🔄 Application Flow
+
+```text
+User
+  │
+  ▼
+Frontend
+  │
+  │ Request
+  ▼
+Backend
+  │
+  ▼
+Gait Analysis
+  │
+  ▼
+Processed Result
+  │
+  ▼
+Frontend
+  │
+  ▼
+User
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🦶 What is Gait Analysis?
 
-The application follows a layered architecture:
+Gait analysis involves studying the way a person walks and identifying measurable characteristics of movement.
 
-```text
-Client / Browser
-       ↓
-   Controller
-       ↓
-     Service
-       ↓
-   Repository
-       ↓
- Spring Data JPA
-       ↓
-    Hibernate
-       ↓
-   PostgreSQL
-```
+Depending on the implementation, gait analysis can involve information such as:
 
-### Controller
+* Walking patterns
+* Movement characteristics
+* Gait measurements
+* Joint or body movement
+* Temporal characteristics
+* Visual representation of results
 
-Handles incoming HTTP requests and communicates with the service layer.
-
-### Service
-
-Contains the application's business logic.
-
-### Repository
-
-Uses Spring Data JPA to communicate with the database.
-
-### Entity
-
-Represents the `Book` table in PostgreSQL.
+The application provides a software-based interface for working with this type of information.
 
 ---
 
-## 🗃️ Database Configuration
+## 💻 Technologies
 
-This project uses **PostgreSQL**.
+The project is organized into two primary components:
 
-Create a database named:
+### Frontend
 
-```sql
-CREATE DATABASE librarydb;
-```
+The `frontend/` directory contains the client-side application responsible for:
 
-The application uses the following configuration:
+* User interface
+* User interaction
+* Displaying information
+* Communicating with the backend
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/librarydb
-spring.datasource.username=postgres
-spring.datasource.password=${DB_PASSWORD}
-```
+### Backend
 
-### 🔐 Environment Variable
+The `backend/` directory contains the server-side application responsible for:
 
-The PostgreSQL password is intentionally **not stored in this repository**.
+* Application logic
+* API communication
+* Processing requests
+* Gait-analysis-related processing
 
-Set the environment variable:
-
-```text
-DB_PASSWORD=<your-postgresql-password>
-```
-
-If you are using Eclipse/STS:
-
-**Run → Run Configurations → Spring Boot App → Environment → New**
-
-Add:
-
-```text
-Name: DB_PASSWORD
-Value: Your PostgreSQL password
-```
+> For the exact frameworks, libraries, and versions, refer to the dependency/configuration files inside the respective directories.
 
 ---
 
-## ▶️ How to Run the Project
+## 🚀 Getting Started
 
-### 1. Clone the repository
+### Prerequisites
+
+Before running the project locally, install the development tools required by the frontend and backend.
+
+Also check the project configuration files for any required environment variables.
+
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Sonalisahu728/LibraryManagement.git
+git clone https://github.com/Sonalisahu728/gait-analysis-project.git
 ```
 
-### 2. Open the project
-
-Open the project in:
-
-* Spring Tool Suite
-* Eclipse
-* IntelliJ IDEA
-* VS Code
-
-### 3. Configure PostgreSQL
-
-Make sure PostgreSQL is running and the `librarydb` database exists.
-
-### 4. Configure the database password
-
-Set:
-
-```text
-DB_PASSWORD
-```
-
-to your PostgreSQL password.
-
-### 5. Run the application
-
-Run:
-
-```text
-LibraryManagementApplication.java
-```
-
-Or using Maven:
+Navigate to the project:
 
 ```bash
-mvn spring-boot:run
-```
-
-### 6. Open the application
-
-Visit:
-
-```text
-http://localhost:8083
+cd gait-analysis-project
 ```
 
 ---
 
-## 📡 API
+## ⚙️ Backend Setup
 
-The application provides endpoints for managing books.
+Navigate to the backend directory:
 
-| Method | Endpoint      | Description    |
-| ------ | ------------- | -------------- |
-| GET    | `/books`      | Get all books  |
-| POST   | `/books`      | Add a new book |
-| PUT    | `/books/{id}` | Update a book  |
-| DELETE | `/books/{id}` | Delete a book  |
+```bash
+cd backend
+```
 
-> Endpoint paths may vary depending on the controller mappings in the project.
+Install the required dependencies according to the backend configuration.
+
+If the backend uses npm:
+
+```bash
+npm install
+```
+
+Then start the backend using the appropriate command defined in the project's configuration.
+
+For example:
+
+```bash
+npm run dev
+```
+
+> Use the actual command defined in `backend/package.json` if it differs.
 
 ---
 
-## 📖 Book Model
+## 🎨 Frontend Setup
 
-A book contains information such as:
+Open another terminal and navigate to the frontend directory:
 
-```text
-id
-title
-author
-genre
-available
+```bash
+cd gait-analysis-project/frontend
 ```
 
-Example:
+Install dependencies:
 
-```json
-{
-  "title": "Clean Code",
-  "author": "Robert C. Martin",
-  "genre": "Programming",
-  "available": true
-}
+```bash
+npm install
 ```
+
+Start the frontend using the project's configured development script.
+
+For example:
+
+```bash
+npm run dev
+```
+
+> Use the actual command defined in `frontend/package.json` if it differs.
+
+---
+
+## 🔐 Environment Variables
+
+If the application requires environment variables, create the required `.env` file locally.
+
+For example:
+
+```env
+API_URL=your_backend_url
+```
+
+Never commit sensitive information such as:
+
+* Passwords
+* API keys
+* Authentication tokens
+* Database credentials
+* Secret keys
+
+to GitHub.
+
+---
+
+## 🌐 Deployment
+
+The project has a deployed web application:
+
+**Live Demo:**
+https://gait-analysis-project.vercel.app/
+
+The GitHub repository contains the source code for the application's frontend and backend.
 
 ---
 
 ## 🧪 Testing
 
-The project contains a Spring Boot test structure under:
+Testing can be performed by verifying:
 
-```text
-src/test/java
-```
+* Frontend functionality
+* Backend API responses
+* Frontend–backend communication
+* Gait-analysis processing
+* User input handling
+* Error handling
+* Result presentation
 
-Tests can be executed using:
-
-```bash
-mvn test
-```
-
----
-
-## 🔒 Security
-
-Sensitive credentials should not be committed to GitHub.
-
-The database password is loaded using:
-
-```properties
-spring.datasource.password=${DB_PASSWORD}
-```
-
-The `.gitignore` file also prevents generated build files such as `target/` from being committed.
-
-**Never commit real passwords, API keys, tokens, or other secrets to the repository.**
+Additional automated tests can be added as the project evolves.
 
 ---
 
-## 🔮 Future Improvements
+## 🔮 Future Enhancements
 
-Possible improvements for the project include:
+Possible improvements include:
 
-* 👤 User authentication and authorization
-* 🔑 Role-based access control
-* 📚 Book borrowing and returning
-* 👨‍🎓 Student/member management
-* 🔍 Advanced book search and filtering
-* 📄 Pagination and sorting
-* 📊 Admin dashboard
-* ✅ More comprehensive unit and integration tests
-* 🐳 Docker support
-* ☁️ Cloud deployment
+* 📊 Advanced gait visualizations
+* 📈 Detailed gait metrics
+* 🎥 Video-based gait analysis
+* 🤖 Machine-learning-based gait classification
+* 📄 Downloadable analysis reports
+* 👤 User authentication
+* 📚 Analysis history
+* 📊 Comparison of multiple gait analyses
+* 📱 Improved mobile responsiveness
+* 🧪 Expanded automated testing
+* ☁️ Production-ready deployment and monitoring
+
+---
+
+## 📸 Project Screenshots
+
+Screenshots of the application can be added here to demonstrate the user interface and analysis workflow.
+
+Example:
+
+```markdown
+![Home Page](screenshots/home.png)
+
+![Gait Analysis](screenshots/analysis.png)
+```
 
 ---
 
 ## 👩‍💻 Author
 
-**Sonali Sahu**
+### Sonali Sahu
 
 GitHub:
 https://github.com/Sonalisahu728
 
 ---
 
-## ⭐ If you find this project useful
+## 📂 Repository
 
-Feel free to explore the repository, use the project for learning, and suggest improvements.
+GitHub Repository:
+
+https://github.com/Sonalisahu728/gait-analysis-project
+
+---
+
+## 📜 License
+
+This project currently does not specify a license.
+
+If you plan to distribute the project as open-source software, add an appropriate license to the repository.
+
+---
+
+⭐ **If you find this project interesting, feel free to explore the repository and contribute!**
